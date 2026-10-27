@@ -1,0 +1,26 @@
+name: Ziziconfig
+on: workflow_dispatch
+permissions:
+  contents: write
+  actions: write
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebrand
+        run: |
+          find V2rayNG/app/src/main/res -name strings.xml -exec sed -i 's|<string name="app_name">[^<]*</string>|<string name="app_name">Ziziconfig</string>|' {} +
+          sed -i '/applicationId/ s|com\.v2ray\.ang|com.ziziconfig.app|' V2rayNG/app/build.gradle.kts
+          grep -n "applicationId" V2rayNG/app/build.gradle.kts
+          grep -q "com.ziziconfig.app" V2rayNG/app/build.gradle.kts || { echo "applicationId not changed"; exit 1; }
+          git config user.name "ziziconfig"
+          git config user.email "ziziconfig@users.noreply.github.com"
+          git commit -am "Rebrand to Ziziconfig" || echo "already done"
+          git push
+      - name: Start build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow list --repo ${{ github.repository }}
+          gh workflow run build.yml --repo ${{ github.repository }} || echo "Run the APK build manually from the Actions tab"
